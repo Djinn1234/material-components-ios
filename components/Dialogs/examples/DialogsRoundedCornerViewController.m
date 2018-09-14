@@ -13,12 +13,19 @@
 // limitations under the License.
 
 #import "DialogsRoundedCornerViewController.h"
+#import "MDCAlertControllerThemer.h"
+#import "MDCAlertScheme.h"
 #import "MaterialButtons.h"
+#import "MaterialDialogs+DialogThemer.h"
 #import "MaterialDialogs.h"
+
+static const CGFloat kCornerRadius = 24.0f;
 
 @interface DialogsRoundedCornerSimpleController : UIViewController
 
 @property(nonatomic, strong) MDCFlatButton *dismissButton;
+
+@property(nonatomic, readwrite) CGFloat cornerRadius;
 
 @end
 
@@ -42,8 +49,6 @@
            forControlEvents:UIControlEventTouchUpInside];
 
   [self.view addSubview:_dismissButton];
-
-  self.view.layer.cornerRadius = 24.0;
 }
 
 - (void)viewWillLayoutSubviews {
@@ -61,17 +66,38 @@
   [self.presentingViewController dismissViewControllerAnimated:YES completion:NULL];
 }
 
+- (CGFloat)cornerRadius {
+  return self.view.layer.cornerRadius;
+}
+
+- (void)setCornerRadius:(CGFloat)cornerRadius {
+  self.view.layer.cornerRadius = cornerRadius;
+}
+
 @end
 
 
 @interface DialogsRoundedCornerViewController ()
 
 @property(nonatomic, strong) MDCFlatButton *presentButton;
+@property(nonatomic, strong) MDCFlatButton *presentMDCButton;
 @property(nonatomic, strong) MDCDialogTransitionController *transitionController;
+
+@property(nonatomic, strong, nullable) MDCSemanticColorScheme *colorScheme;
+@property(nonatomic, strong, nullable) MDCTypographyScheme *typographyScheme;
 
 @end
 
 @implementation DialogsRoundedCornerViewController
+
+- (id)init {
+  self = [super init];
+  if (self) {
+    self.colorScheme = [[MDCSemanticColorScheme alloc] init];
+    self.typographyScheme = [[MDCTypographyScheme alloc] init];
+  }
+  return self;
+}
 
 - (void)viewDidLoad {
   [super viewDidLoad];
@@ -83,7 +109,7 @@
   self.view.backgroundColor = [UIColor whiteColor];
 
   _presentButton = [[MDCFlatButton alloc] initWithFrame:CGRectZero];
-  [_presentButton setTitle:@"Present" forState:UIControlStateNormal];
+  [_presentButton setTitle:@"UIKit Dialog" forState:UIControlStateNormal];
   [_presentButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
   _presentButton.autoresizingMask =
       UIViewAutoresizingFlexibleTopMargin |
@@ -95,6 +121,14 @@
            forControlEvents:UIControlEventTouchUpInside];
 
   [self.view addSubview:_presentButton];
+
+  _presentMDCButton = [[MDCFlatButton alloc] initWithFrame:CGRectZero];
+  [_presentMDCButton setTitle:@"Present Material Dialog" forState:UIControlStateNormal];
+  [_presentMDCButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+  [_presentMDCButton addTarget:self
+                        action:@selector(didTapPresentMDCDialog:)
+              forControlEvents:UIControlEventTouchUpInside];
+  [self.view addSubview:_presentMDCButton];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -102,16 +136,57 @@
   [_presentButton sizeToFit];
   _presentButton.center = CGPointMake(CGRectGetMidX(self.view.bounds),
                                       CGRectGetMidY(self.view.bounds));
+  [_presentMDCButton sizeToFit];
+  _presentMDCButton.center =
+      CGPointMake(CGRectGetMidX(self.view.bounds),
+                  _presentButton.center.y + _presentButton.frame.size.height + 8.0f);
+}
+
+- (MDCAlertController *)createMDCAlertController {
+  NSString *title = @"Using Material alert controller?";
+  NSString *message = @"Be careful with modal alerts as they can be annoying if over-used.";
+
+  MDCAlertController *mdcAlertController = [MDCAlertController alertControllerWithTitle:title
+                                                                                message:message];
+  [mdcAlertController mdc_setAdjustsFontForContentSizeCategory:true];
+
+  MDCAlertAction *agreeAction = [MDCAlertAction actionWithTitle:@"OK"
+                                                        handler:^(MDCAlertAction *_Nonnull action) {
+                                                          NSLog(@"OK pressed");
+                                                        }];
+  [mdcAlertController addAction:agreeAction];
+
+  return mdcAlertController;
 }
 
 - (IBAction)didTapPresent:(id)sender {
-  UIViewController *viewController =
+  DialogsRoundedCornerSimpleController *viewController =
       [[DialogsRoundedCornerSimpleController alloc] initWithNibName:nil bundle:nil];
 
   viewController.modalPresentationStyle = UIModalPresentationCustom;
   viewController.transitioningDelegate = self.transitionController;
 
+  // sets the dialog's corner radius
+  viewController.cornerRadius = kCornerRadius;
+
+  // ensure shadow/tracking layer matches the dialog's corner radius
+  MDCDialogPresentationController *controller = viewController.mdc_dialogPresentationController;
+  controller.dialogCornerRadius = kCornerRadius;
+
   [self presentViewController:viewController animated:YES completion:NULL];
+}
+
+- (void)didTapPresentMDCDialog:(id)sender {
+  MDCAlertController *mdcAlertController = [self createMDCAlertController];
+
+  // Dialog Theming
+  MDCAlertScheme *alertScheme = [[MDCAlertScheme alloc] init];
+  alertScheme.colorScheme = self.colorScheme;
+  alertScheme.typographyScheme = self.typographyScheme;
+  [MDCAlertControllerThemer applyScheme:alertScheme toAlertController:mdcAlertController];
+  mdcAlertController.cornerRadius = kCornerRadius;
+
+  [self presentViewController:mdcAlertController animated:YES completion:NULL];
 }
 
 #pragma mark - CatalogByConvention
