@@ -106,6 +106,7 @@ static NSString *const kMaterialDialogsBundle = @"MaterialDialogs.bundle";
     _alertTitle = [title copy];
     _message = [message copy];
     _actions = [[NSMutableArray alloc] init];
+    _titleAlignment = NSTextAlignmentNatural;
 
     super.transitioningDelegate = _transitionController;
     super.modalPresentationStyle = UIModalPresentationCustom;
@@ -210,6 +211,11 @@ static NSString *const kMaterialDialogsBundle = @"MaterialDialogs.bundle";
   if (self.alertView) {
     self.alertView.buttonColor = buttonColor;
   }
+}
+
+- (void)setTitleAlignment:(NSTextAlignment)titleAlignment {
+  _titleAlignment = titleAlignment;
+  self.alertView.titleAlignment = titleAlignment;
 }
 
 - (void)setCornerRadius:(CGFloat)cornerRadius {
@@ -317,6 +323,7 @@ static NSString *const kMaterialDialogsBundle = @"MaterialDialogs.bundle";
   self.alertView.buttonColor = self.buttonTitleColor;
   self.alertView.buttonFont = self.buttonFont;
   self.alertView.buttonInkColor = self.buttonInkColor;
+  self.alertView.titleAlignment = self.titleAlignment;
   self.alertView.cornerRadius = self.cornerRadius;
 
   for (MDCAlertAction *action in self.actions) {
